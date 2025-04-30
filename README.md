@@ -13,12 +13,12 @@ This encoding difference creates compatibility issues when processing FASTQ file
 
 ## Contents
 
-- `script.sh`: Script to generate random FASTQ files with either Phred+33 or Phred+64 encoding (provided externally)
-- `sort_fastq_by_phred.sh`: Script to detect Phred encoding and sort files into appropriate directories
+- `generate_fastq_files.sh`: Script to generate random FASTQ files with either Phred+33 or Phred+64 encoding (provided externally)
+- `detect_fastq_encoding.sh`: Script to detect Phred encoding and sort files into appropriate directories
 
 ## How It Works
 
-The sorting script (`sort_fastq_by_phred.sh`) uses the following approach to detect Phred encoding:
+The sorting script (`detect_fastq_encoding.sh`) uses the following approach to detect Phred encoding:
 
 1. Extract quality score lines from the FASTQ file (every 4th line)
 2. Use `od` (octal dump) to convert ASCII characters to their decimal values
@@ -29,14 +29,50 @@ The sorting script (`sort_fastq_by_phred.sh`) uses the following approach to det
 
 This approach is based on the observation that Phred+33 encoding typically uses ASCII values 33-73, while Phred+64 encoding uses ASCII values 64-104.
 
+## Arguments
+
+The `detect_fastq_encoding.sh` script accepts **one optional argument**:
+
+### `DIRECTORY` (optional)
+
+Specifies the directory containing `.fastq` files to classify by Phred encoding.
+
+```bash
+./detect_fastq_encoding.sh [DIRECTORY]
+```
+
+- **If provided**:  
+  The script processes all `.fastq` files found in the specified directory. It classifies them as Phred+33 or Phred+64 and moves them to `phred33/` or `phred64/` subdirectories within that directory.
+
+  **Example:**
+  ```bash
+  ./detect_fastq_encoding.sh /home/user/fastq_samples
+  ```
+
+- **If omitted**:  
+  The script defaults to the **current directory**.  
+  If no `.fastq` files are found, it attempts to auto-generate test data using the `generate_fastq_files.sh` script (if available in the current directory), and then proceeds to classify the newly generated files.
+
+  **Example:**
+  ```bash
+  ./detect_fastq_encoding.sh
+  ```
+
+### Behavior Summary
+
+| Argument Provided? | Behavior                                                                 |
+|--------------------|--------------------------------------------------------------------------|
+| No                 | Uses current directory; generates FASTQ files if none are found          |
+| Yes                | Uses specified directory; classifies `.fastq` files found within it      |
+
 ## Usage
 
 ### Step 1: Generate random FASTQ files
 
 ```bash
-# Download and run the provided script
-chmod +x script.sh
-./script.sh
+# Download and run the provided script for generating FASTQ files
+chmod +x generate_fastq_files.sh
+./generate_fastq_files.sh
 ```
 
 This will generate 10 random FASTQ files in the current directory with randomly assigned Phred+33 or Phred+64 encoding.
@@ -45,10 +81,10 @@ This will generate 10 random FASTQ files in the current directory with randomly 
 
 ```bash
 # Make the script executable
-chmod +x sort_fastq_by_phred.sh
+chmod +x detect_fastq_encoding.sh
 
 # Run the script
-./sort_fastq_by_phred.sh
+./detect_fastq_encoding.sh
 ```
 
 The script will:
@@ -56,6 +92,14 @@ The script will:
 2. Analyze each FASTQ file
 3. Move each file to the appropriate directory based on its encoding
 4. Display a summary of the classification results
+
+Optional: Provide a directory with FASTQ files
+Instead of generating new files, you can provide your own directory of FASTQ files as an argument:
+
+```bash
+./detect_fastq_encoding.sh /path/to/your/fastq_files
+```
+This allows flexibility in using either test data or real data for classification.
 
 ## Implementation Details
 

@@ -1,18 +1,17 @@
 #!/bin/bash
 
-# sort_fastq_by_phred.sh
+# detect_fastq_encoding.sh
 # This script detects Phred encoding (Phred+33 or Phred+64) in FASTQ files
 # and organizes them into appropriate directories.
 # 
-# Usage: ./sort_fastq_by_phred.sh
-
-# Set up output directories
-mkdir -p phred33 phred64
+# Usage: ./detect_fastq_encoding.sh
 
 # Color coding for terminal output
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+
+lookup_dir=${1:-"-"} # "-": do autogenerate files {any string, except "-"}: files are already in the specified by this arg directory
 
 echo -e "${BLUE}===== FASTQ File Phred Encoding Detector =====${NC}"
 echo "This script identifies Phred+33 vs Phred+64 encoding in FASTQ files"
@@ -58,8 +57,15 @@ detect_encoding() {
     fi
 }
 
+if [ "$lookup_dir" = "-" ]; then
+    lookup_dir="$PWD"
+    "$PWD/generate_fastq_files.sh"
+    ls "$PWD/generate_fastq_files.sh"
+    echo -e "\n--------\nIn IF!!!!\n$PWD/generate_fastq_files.sh\n---\n"
+fi
+
 # Find all FASTQ files in the current directory
-fastq_files=$(find . -maxdepth 1 -name "*.fastq" -type f)
+fastq_files=$(find "$lookup_dir" -maxdepth 1 -name "*.fastq" -type f)
 
 if [ -z "$fastq_files" ]; then
     echo "No FASTQ files found in the current directory."
