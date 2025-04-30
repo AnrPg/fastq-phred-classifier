@@ -1,0 +1,20 @@
+# Generated FASTQ files
+*.fastq
+
+# Output directories content
+phred33/*
+phred64/*
+
+# Keep directory structure
+!phred33/.gitkeep
+!phred64/.gitkeep
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+.idea/
+.vscode/
