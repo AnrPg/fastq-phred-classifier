@@ -28,18 +28,27 @@ detect_encoding() {
     # Use od to examine the first few quality lines
     # We'll analyze 10 quality lines to make a robust determination
     
-    quality_lines=$(awk 'NR%4==0' "$file" | head -n 10)
-    
+    quality_lines=$(awk '
+    NR % 4 == 0 {
+        if ($0 ~ /^\+$/) next                # Skip lines that start with newline char
+        if ($0 ~ /length/) { next }          # Skip lines that start with "@" and contain "length"
+        if ($0 ~ /^[ATCGU]+$/) { next }      # Skip lines that contain only A, T, C, G, U
+        if ($0 ~ /^\+$/) { next }            # Skip lines that contain only a "+"
+        { print }
+    }
+    ' "$file" | head -n 100)
+
     # Use od to convert the quality scores to octal values
     # -An: don't print address
     # -t: specify the format (dC = decimal byte and character)
     # -v: display all input data
-    octal_dump=$(echo "$quality_lines" | od -An -t dC -v)
+    # Use ---> tr -s ' ' '\n'   so that each ascii code is in its own new line (one code per line)
+    ascii_values=$(printf "%s\n" "$quality_lines" | od -An -t dC -v | tr -s ' ' '\n' | grep -E '^[0-9]+$')
+
+    # Calculate the minimum ASCII value in the quality scores (grep flushes away some white chars that prev command might have added)
+    min_value=$(echo "$ascii_values" | grep -v -E '^(10|32)$' | sort -n | head -n 1)
     
-    # Calculate the minimum ASCII value in the quality scores
-    min_value=$(echo "$octal_dump" | grep -v "^ *$" | tr -s ' ' | cut -d' ' -f1 | sort -n | head -n 1)
-    
-    echo "  Minimum ASCII value found: $min_value"
+    echo -e "  Minimum ASCII value found: $min_value"
     
     # Determine encoding based on minimum value
     # Phred+33 typically has ASCII values starting from 33
@@ -84,7 +93,7 @@ for file in "${fastq_files[@]}"; do
     else
         phred64_count=$((phred64_count+1))
         echo "  Moved to phred64/ directory"
-        # mv "$original_filepath" "$PWD/phred64/"
+        mv "$original_filepath" "$PWD/phred64/"
     fi
 done
 
