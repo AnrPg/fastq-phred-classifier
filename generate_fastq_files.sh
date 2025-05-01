@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Parameters
-NUM_FILES=0    # Number of FASTQ files to generate
+NUM_FILES=10    # Number of FASTQ files to generate
 NUM_READS=1000  # Number of reads per file
 MIN_LENGTH=30  # Minimum read length
 MAX_LENGTH=150 # Maximum read length
