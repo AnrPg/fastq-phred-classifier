@@ -20,7 +20,7 @@ echo ""
 
 # Function to detect encoding for a single FASTQ file
 detect_encoding() {
-    local file=$1
+    local file="$1"
     
     echo -e "Analyzing ${GREEN}$file${NC}..."
     
@@ -46,13 +46,9 @@ detect_encoding() {
     # Phred+64 typically has ASCII values starting from 64
     if [ "$min_value" -lt 58 ]; then
         echo -e "  Detected: ${GREEN}Phred+33${NC} encoding"
-        mv "$file" phred33/
-        echo "  Moved to phred33/ directory"
         return 33
     else
         echo -e "  Detected: ${GREEN}Phred+64${NC} encoding"
-        mv "$file" phred64/
-        echo "  Moved to phred64/ directory"
         return 64
     fi
 }
@@ -60,12 +56,10 @@ detect_encoding() {
 if [ "$lookup_dir" = "-" ]; then
     lookup_dir="$PWD"
     "$PWD/generate_fastq_files.sh"
-    ls "$PWD/generate_fastq_files.sh"
-    echo -e "\n--------\nIn IF!!!!\n$PWD/generate_fastq_files.sh\n---\n"
 fi
 
 # Find all FASTQ files in the current directory
-fastq_files=$(find "$lookup_dir" -maxdepth 1 -name "*.fastq" -type f)
+IFS=$'\n' read -d '' -r -a fastq_files < <(find "$lookup_dir" -maxdepth 1 -type f -name "*.fastq")
 
 if [ -z "$fastq_files" ]; then
     echo "No FASTQ files found in the current directory."
@@ -75,24 +69,22 @@ fi
 # Process each FASTQ file
 phred33_count=0
 phred64_count=0
-
-for file in $fastq_files; do
-    # Skip files in subdirectories
-    if [[ "$file" == *"/"* && "$file" != "./"* ]]; then
-        continue
-    fi
+i=0
+for file in "${fastq_files[@]}"; do
     
-    # Clean up file path if it starts with ./
-    file=${file#./}
-    
+    original_filepath="$file"
     # Detect encoding and move the file
     detect_encoding "$file"
     encoding=$?
     
     if [ $encoding -eq 33 ]; then
         phred33_count=$((phred33_count+1))
+        echo "  Moved to phred33/ directory"
+        mv "$original_filepath" "$PWD/phred33/"
     else
         phred64_count=$((phred64_count+1))
+        echo "  Moved to phred64/ directory"
+        # mv "$original_filepath" "$PWD/phred64/"
     fi
 done
 
@@ -104,3 +96,5 @@ echo ""
 echo "Files have been organized into:"
 echo "  - phred33/ directory for Phred+33 encoded files"
 echo "  - phred64/ directory for Phred+64 encoded files"
+
+# 3,5,7,9 are Phred33
